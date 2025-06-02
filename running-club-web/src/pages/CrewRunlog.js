@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function CrewRunlog() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const crewName = queryParams.get("name");
   const decodedCrewName = decodeURIComponent(crewName);
@@ -59,7 +60,15 @@ export default function CrewRunlog() {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>🏃‍♂️ {decodedCrewName} 크루 러닝 기록</h1>
+      <div style={styles.header}>
+        <h1 style={styles.title}>🏃‍♂️ {decodedCrewName} 크루 러닝 기록</h1>
+        <button
+          style={styles.backButton}
+          onClick={() => navigate(`/crew?name=${encodeURIComponent(decodedCrewName)}`)}
+        >
+          ← 뒤로가기
+        </button>
+      </div>
 
       <button onClick={() => setShowForm(true)} style={styles.writeButton}>+ 기록 작성</button>
 
@@ -117,10 +126,23 @@ export default function CrewRunlog() {
 
 const styles = {
   container: { padding: '2rem', fontFamily: "'Segoe UI','Noto Sans KR',sans-serif", backgroundColor: '#f9f9f9', minHeight: '100vh' },
-  title: { fontSize: '2rem', marginBottom: '1.5rem', color: '#333' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' },
+
+  title: { fontSize: '2rem', color: '#333' },
+
+  // ✅ 뒤로가기 버튼 스타일 추가
+  backButton: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#007bff',
+    color: 'white',
+    fontSize: '1rem',
+    cursor: 'pointer'
+  },
   writeButton: { padding: '0.7rem 1.5rem', borderRadius: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', fontSize: '1rem', cursor: 'pointer', marginBottom: '2rem' },
   modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  form: { backgroundColor: '#fff',   padding: '2rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', width: '400px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.7rem' },
+  form: { backgroundColor: '#fff', padding: '2rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', width: '400px', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.7rem' },
   input: { padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #ccc' },
   textarea: { padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #ccc', minHeight: '80px' },
   fileInput: { fontSize: '1rem' },

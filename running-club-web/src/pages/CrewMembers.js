@@ -1,8 +1,9 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function CrewMembers() {
   const location = useLocation();
+  const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const crewName = queryParams.get("name");
   const decodedCrewName = decodeURIComponent(crewName);
@@ -20,7 +21,16 @@ export default function CrewMembers() {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>👥 {decodedCrewName} 크루원 목록</h1>
+      {/* 상단 header 추가 */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>👥 {decodedCrewName} 크루원 목록</h1>
+        <button
+          style={styles.backButton}
+          onClick={() => navigate(`/crew?name=${encodeURIComponent(decodedCrewName)}`)}
+        >
+          ← 뒤로가기
+        </button>
+      </div>
 
       <div style={styles.memberList}>
         {sortedMembers.map((member, index) => (
@@ -35,8 +45,22 @@ export default function CrewMembers() {
 }
 
 const styles = {
+
   container: { padding: '2rem', fontFamily: "'Segoe UI','Noto Sans KR',sans-serif", backgroundColor: '#f9f9f9', minHeight: '100vh' },
-  title: { fontSize: '2rem', marginBottom: '2rem', color: '#333' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' },
+
+  title: { fontSize: '2rem', color: '#333' },
+
+  // ✅ 뒤로가기 버튼 스타일 추가
+  backButton: {
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#007bff',
+    color: 'white',
+    fontSize: '1rem',
+    cursor: 'pointer'
+  },
   memberList: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   memberItem: { backgroundColor: '#fff', padding: '1rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
   nickname: { fontSize: '0.9rem', color: '#777' }

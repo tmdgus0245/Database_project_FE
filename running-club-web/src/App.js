@@ -10,6 +10,7 @@ import Crew from './pages/Crew';
 import MyRunning from './pages/MyRunning';
 import CrewRunlog from './pages/CrewRunlog'; 
 import CrewMembers from './pages/CrewMembers';
+import CrewSchedule from './pages/CrewSchedule';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/myrunning" element={<MyRunning />} />
         <Route path="/crew/runlog" element={<CrewRunlog />} />
         <Route path="/crew/members" element={<CrewMembers />} />
+        <Route path="/crew/schedule" element={<CrewSchedule />} />
       </Routes>
     </Router>
   );
