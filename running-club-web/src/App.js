@@ -22,7 +22,7 @@ function App() {
         <Route path="/board" element={<Board />} />
         <Route path="/events" element={<Events />} />
         <Route path="/crewlist" element={<CrewList />} />
-        <Route path="/crew" element={<Crew />} />
+        <Route path="/crew/:id" element={<Crew />} />
         <Route path="/myrunning" element={<MyRunning />} />
         <Route path="/crew/runlog" element={<CrewRunlog />} />
         <Route path="/crew/members" element={<CrewMembers />} />

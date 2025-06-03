@@ -23,8 +23,8 @@ export default function Explore() {
     crew.region.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCrewClick = (crewName) => {
-    navigate(`/crew?name=${encodeURIComponent(crewName)}`);
+  const handleCrewClick = (crewId) => {
+    navigate(`/crew/${crewId}`);
   };
 
   return (
@@ -38,11 +38,11 @@ export default function Explore() {
         style={styles.searchBar}
       />
       <div style={styles.crewList}>
-        {filteredCrews.map((crew, index) => (
+        {filteredCrews.map((crew) => (
           <div
-            key={index}
+            key={crew.crew_id}
             style={styles.crewItem}
-            onClick={() => handleCrewClick(crew.name)}
+            onClick={() => handleCrewClick(crew.crew_id)}
           >
             {crew.name} / {crew.region}
           </div>

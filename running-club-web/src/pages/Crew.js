@@ -1,35 +1,81 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function Crew() {
-    const location = useLocation();
+    const { id } = useParams();
     const navigate = useNavigate();
 
-    const queryParams = new URLSearchParams(location.search);
-    const crewName = queryParams.get("name");
-    const decodedCrewName = decodeURIComponent(crewName);
+    const [crewInfo, setCrewInfo] = useState({
+        name: '',
+        leader: '',
+        region: '',
+        description: ''
+    });
 
-    const crewInfo = {
-        region: "서울",
-        description: `${decodedCrewName} 크루에 오신 것을 환영합니다! 함께 건강하게 달려요.`,
+    const [reviews, setReviews] = useState([]);
+
+    const [newReview, setNewReview] = useState("");
+    const [newRating, setNewRating] = useState(5);
+
+    const averageRating = reviews.length > 0
+        ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length)
+        : 0;
+
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const StarRating = ({ score }) => {
+        const percentage = (score / 5) * 100;
+
+        return (
+            <div style={{ position: 'relative', display: 'inline-block', width: '120px', height: '24px' }}>
+                <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
+                    {[...Array(5)].map((_, index) => (
+                        <svg key={index} width="24" height="24" viewBox="0 0 24 24" fill="#ddd">
+                            <path d="M12 .587l3.668 7.568L24 9.75l-6 5.849 1.42 8.287L12 18.896l-7.42 4.99L6 15.599 0 9.75l8.332-1.595z" />
+                        </svg>
+                    ))}
+                </div>
+
+                <div style={{ position: 'absolute', width: `${percentage}%`, height: '100%', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {[...Array(5)].map((_, index) => (
+                        <svg key={index} width="24" height="24" viewBox="0 0 24 24" fill="#ffc107">
+                            <path d="M12 .587l3.668 7.568L24 9.75l-6 5.849 1.42 8.287L12 18.896l-7.42 4.99L6 15.599 0 9.75l8.332-1.595z" />
+                        </svg>
+                    ))}
+                </div>
+            </div>
+        );
     };
 
-    const [reviews, setReviews] = useState([
-        "좋은 크루에요!",
-        "첫 참가했는데 너무 재밌었어요!",
-    ]);
-    const [newReview, setNewReview] = useState("");
-    const [menuOpen, setMenuOpen] = useState(false); // 메뉴 토글 상태
+    useEffect(() => {
+        axios.get(`http://172.21.81.205:5000/api/crews/${id}`)
+            .then(response => {
+                setCrewInfo(response.data);
+                setReviews(response.data.reviews);
+            })
+            .catch(error => {
+                console.error("Error fetching crew info:", error);
+            });
+    }, [id]);
 
     const handleReviewSubmit = () => {
         if (newReview.trim() !== "") {
-            setReviews([...reviews, newReview]);
+            setReviews([...reviews, {
+                review_id: Date.now(),
+                user_id: 1,
+                rating: newRating,
+                comment: newReview,
+                created_at: new Date().toISOString()
+            }]);
             setNewReview("");
+            setNewRating(5);
         }
     };
 
+
     const handleMenuClick = (menu) => {
-        navigate(`/crew/${menu}?name=${encodeURIComponent(decodedCrewName)}`);
+        navigate(`/crew/${id}/${menu}`);
     };
 
     return (
@@ -47,12 +93,21 @@ export default function Crew() {
                 </div>
 
                 <div style={styles.titleBox}>
-                    <h2>{decodedCrewName}</h2>
+                    <h2>{crewInfo.name}</h2>
+                    <p style={styles.leader}>크루장: {crewInfo.leader}</p>
                     <p style={styles.region}>{crewInfo.region}</p>
                 </div>
 
                 <button style={styles.joinButton}>가입</button>
             </div>
+
+            <div style={styles.ratingBox}>
+                <h3>평균 평점</h3>
+                <p style={styles.ratingScore}>
+                    <StarRating score={averageRating} /> ({averageRating.toFixed(1)} / 5.0)
+                </p>
+            </div>
+
 
             <div style={styles.description}>
                 <h3>크루 소개</h3>
@@ -62,6 +117,16 @@ export default function Crew() {
             <div style={styles.reviewSection}>
                 <h3>리뷰</h3>
                 <div style={styles.reviewInputBox}>
+                    <select
+                        value={newRating}
+                        onChange={(e) => setNewRating(Number(e.target.value))}
+                        style={styles.ratingSelect}
+                    >
+                        {[5, 4, 3, 2, 1].map((score) => (
+                            <option key={score} value={score}>{score}점</option>
+                        ))}
+                    </select>
+
                     <input
                         type="text"
                         placeholder="리뷰 작성..."
@@ -73,9 +138,9 @@ export default function Crew() {
                 </div>
 
                 <div style={styles.reviewList}>
-                    {reviews.map((review, index) => (
-                        <div key={index} style={styles.reviewItem}>
-                            {review}
+                    {reviews.map((review) => (
+                        <div key={review.review_id} style={styles.reviewItem}>
+                            <strong>{review.rating}점</strong> - {review.comment} ({review.created_at})
                         </div>
                     ))}
                 </div>
@@ -101,6 +166,32 @@ const styles = {
         border: 'none',
         cursor: 'pointer',
     },
+    starContainer: {
+        position: 'relative',
+        display: 'inline-block',
+        fontSize: '2rem',
+        lineHeight: 1,
+    },
+
+    starBackground: {
+        color: '#ddd',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        whiteSpace: 'nowrap',
+        zIndex: 1
+    },
+
+    starForeground: {
+        color: '#ffc107',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        zIndex: 2
+    },
+
     dropdownMenu: {
         position: 'absolute',
         top: '2.5rem',
@@ -127,6 +218,11 @@ const styles = {
     },
     titleBox: {
         textAlign: 'center',
+    },
+    leader: {
+        marginTop: '0.2rem',
+        fontSize: '0.9rem',
+        color: '#333',
     },
     region: {
         marginTop: '0.2rem',
