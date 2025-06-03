@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function Explore() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [crews, setCrews] = useState([]);
   const navigate = useNavigate();
 
-  const crews = [
-    "런닝크루 서울",
-    "AJOU 러너스",
-    "스피드러너",
-    "아침조깅팀",
-    "한강마라톤",
-    "청춘런",
-    "주말러너스",
-    "야간런닝크루",
-  ];
+  // 서버에서 데이터 불러오기
+  useEffect(() => {
+    axios.get('http://172.21.81.205:5000/api/crews_search')
+      .then(response => {
+        setCrews(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching crews:", error);
+      });
+  }, []);
 
   const filteredCrews = crews.filter(crew =>
-    crew.toLowerCase().includes(searchTerm.toLowerCase())
+    crew.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    crew.region.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCrewClick = (crewName) => {
@@ -36,12 +39,12 @@ export default function Explore() {
       />
       <div style={styles.crewList}>
         {filteredCrews.map((crew, index) => (
-          <div 
-            key={index} 
-            style={styles.crewItem} 
-            onClick={() => handleCrewClick(crew)}
+          <div
+            key={index}
+            style={styles.crewItem}
+            onClick={() => handleCrewClick(crew.name)}
           >
-            {crew}
+            {crew.name} / {crew.region}
           </div>
         ))}
       </div>
