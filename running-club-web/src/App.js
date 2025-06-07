@@ -23,6 +23,7 @@ function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/crew/:id" element={<Crew />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/mypage/:id" element={<MyPage />} />
         <Route path="/crew/:id/runlog" element={<CrewRunlog />} />
         <Route path="/crew/:id" element={<Crew />} />
         <Route path="/crew/:id/members" element={<CrewMembers />} />

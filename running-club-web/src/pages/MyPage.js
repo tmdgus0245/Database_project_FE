@@ -7,11 +7,14 @@ const MyPage = () => {
     const { id } = useParams();
     const backend = 'http://172.21.81.147:5000';
     const userId = id || 1;
+    const myId = 1;
 
     const selectRef = useRef(null);
     const [editMode, setEditMode] = useState(false);
     const [nickname, setNickname] = useState('');
     const [region, setRegion] = useState('');
+    const [editNickname, setEditNickname] = useState('');
+    const [editRegion, setEditRegion] = useState('');
     const [posts, setPosts] = useState([]);
     const [likedPosts, setLikedPosts] = useState([]);
     const [crews, setCrews] = useState([]);
@@ -204,27 +207,36 @@ const MyPage = () => {
                 {editMode ? (
                     <>
                         <div style={{ marginBottom: '10px' }}>
-                            닉네임: <input value={nickname} onChange={e => setNickname(e.target.value)} style={{ padding: '5px' }} />
+                            닉네임: <input value={editNickname} onChange={e => setEditNickname(e.target.value)} style={{ padding: '5px' }} />
                         </div>
                         <div style={{ marginBottom: '10px' }}>
-                            지역: <input value={region} onChange={e => setRegion(e.target.value)} style={{ padding: '5px' }} />
+                            지역: <input value={editRegion} onChange={e => setEditRegion(e.target.value)} style={{ padding: '5px' }} />
                         </div>
                         <button onClick={async () => {
                             try {
-                                await axios.patch(`${backend}/api/users/${userId}`, { nickname, region });
+                                await axios.patch(`${backend}/api/users/${userId}`, { nickname: editNickname, region: editRegion });
                                 alert("수정 완료");
+                                setNickname(editNickname);
+                                setRegion(editRegion);
                                 setEditMode(false);
                             } catch (err) {
                                 alert("수정 실패");
                             }
                         }} style={{ padding: '8px 16px', marginRight: '10px' }}>저장</button>
+
                         <button onClick={() => setEditMode(false)} style={{ padding: '8px 16px' }}>취소</button>
                     </>
                 ) : (
                     <>
                         <div style={{ marginBottom: '10px' }}>닉네임: {nickname}</div>
                         <div style={{ marginBottom: '10px' }}>지역: {region}</div>
-                        <button onClick={() => setEditMode(true)} style={{ padding: '8px 16px' }}>수정</button>
+                        {userId === myId && (
+                            <button onClick={() => {
+                                setEditNickname(nickname);
+                                setEditRegion(region);
+                                setEditMode(true);
+                            }} style={{ padding: '8px 16px' }}>수정</button>
+                        )}
                     </>
                 )}
             </div>
@@ -379,17 +391,19 @@ const MyPage = () => {
                                     flex: '1'
                                 }}
                             />
-                            <button onClick={handleAddEventRunLog} style={{
-                                padding: '10px 20px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                backgroundColor: '#007bff',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                            }}>
-                                추가
-                            </button>
+                            {userId === myId && (
+                                <button onClick={handleAddEventRunLog} style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: '#007bff',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                }}>
+                                    추가
+                                </button>
+                            )}
                         </div>
 
                         <table style={tableStyle}>
@@ -410,7 +424,9 @@ const MyPage = () => {
                                         <td style={thtdStyle}>{log.distance_km}</td>
                                         <td style={thtdStyle}>{log.duration_min}</td>
                                         <td style={thtdStyle}>
-                                            <button onClick={() => handleDeleteEventRunLog(log.event_log_id)}>삭제</button>
+                                            {userId === myId && (
+                                                <button onClick={() => handleDeleteEventRunLog(log.event_log_id)}>삭제</button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -467,17 +483,19 @@ const MyPage = () => {
                                     flex: '1'
                                 }}
                             />
-                            <button onClick={handleAddRunLog} style={{
-                                padding: '10px 20px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                backgroundColor: '#007bff',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                            }}>
-                                추가
-                            </button>
+                            {userId === myId && (  // ✅ 본인만 추가 가능
+                                <button onClick={handleAddRunLog} style={{
+                                    padding: '10px 20px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: '#007bff',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                }}>
+                                    추가
+                                </button>
+                            )}
                         </div>
 
                         <table style={tableStyle}>
@@ -498,7 +516,9 @@ const MyPage = () => {
                                         <td style={thtdStyle}>{log.duration_min}</td>
                                         <td style={thtdStyle}>{log.pace}</td>
                                         <td style={thtdStyle}>
-                                            <button onClick={() => handleDeleteRunLog(log.log_id)}>삭제</button>
+                                            {userId === myId && (  // ✅ 본인만 삭제 가능
+                                                <button onClick={() => handleDeleteRunLog(log.log_id)}>삭제</button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -507,7 +527,7 @@ const MyPage = () => {
                     </>
                 )}
             </div>
-        </div>
+        </div >
     )
 }
 

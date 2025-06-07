@@ -5,15 +5,14 @@ import axios from 'axios';
 export default function CrewMembers() {
   const { id } = useParams();  // URL에서 id 받아오기
   const navigate = useNavigate();
-
+  const backend = 'http://172.21.81.147:5000';
   const [members, setMembers] = useState([]);
   const [crewName, setCrewName] = useState("");
 
   useEffect(() => {
     if (!id) return;
 
-    // 1. 크루 기본 정보도 가져와서 이름 표시
-    axios.get(`http://172.21.81.147:5000/api/crews/${id}`)
+    axios.get(`${backend}/api/crews/${id}`)
       .then(response => {
         setCrewName(response.data.name);
       })
@@ -21,8 +20,7 @@ export default function CrewMembers() {
         console.error("크루 정보 불러오기 실패:", error);
       });
 
-    // 2. 멤버 리스트 가져오기
-    axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_member`)
+    axios.get(`${backend}/api/crews/${id}/crew_member`)
       .then(response => {
         setMembers(response.data);
       })
@@ -47,8 +45,12 @@ export default function CrewMembers() {
 
       <div style={styles.memberList}>
         {sortedMembers.map((member, index) => (
-          <div key={index} style={styles.memberItem}>
-            <h3>{member.nickname} <span style={styles.user_id}>({member.user_id})</span></h3>
+          <div
+            key={index}
+            style={{ ...styles.memberItem, cursor: 'pointer' }}
+            onClick={() => navigate(`/mypage/${member.user_id}`)}
+          >
+            <h3>{member.nickname}</h3>
             <p><strong>가입일:</strong> {member.join_date}</p>
           </div>
         ))}
@@ -72,5 +74,5 @@ const styles = {
   },
   memberList: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   memberItem: { backgroundColor: '#fff', padding: '1rem', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
-  nickname: { fontSize: '0.9rem', color: '#777' }
+  user_id: { fontSize: '0.9rem', color: '#777' }
 };

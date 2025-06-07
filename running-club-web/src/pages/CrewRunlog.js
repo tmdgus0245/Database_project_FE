@@ -25,6 +25,7 @@ export default function CrewRunlog() {
     axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log`)
       .then(response => {
         setRunLogs(response.data);
+        console.log("runLogs:", response.data);
       })
       .catch(error => {
         console.error("런 기록 불러오기 실패:", error);
@@ -63,20 +64,37 @@ export default function CrewRunlog() {
       duration_min: parseInt(newLog.duration_min),
       avg_pace: parseFloat(avg_pace),
       notes: newLog.notes,
-      photo_url: newLog.photo_url  // 실제 프로젝트에서는 파일 업로드 구현 필요
-    }).then(res => {
-      alert('기록 등록 성공!');
-      setShowForm(false);
-      setNewLog({ date: '', title: '', distance_km: '', duration_min: '', notes: '', photo_url: '' });
+      photo_url: newLog.photo_url
+    })
+      .then(res => {
+        alert('기록 등록 성공!');
+        setShowForm(false);
+        setNewLog({ date: '', title: '', distance_km: '', duration_min: '', notes: '', photo_url: '' });
+        return axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log`);
+      })
+      .then(response => {
+        setRunLogs(response.data);
+      })
+      .catch(err => {
+        console.error("등록 실패:", err);
+        alert("크루장만 작성 가능합니다");
+      });
+  };
 
-      // 다시 불러오기
-      return axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log`);
-    }).catch(err => {
-      console.error("등록 실패:", err);
-      alert("크루장만 작성 가능합니다");
-    }).then(response => {
-      setRunLogs(response.data);
-    });
+  const handleDeleteLog = (crew_log_id) => {
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
+    axios.delete(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log/${crew_log_id}`, {
+      data: { user_id: 1 }  // ✅ body에 user_id 포함
+    })
+      .then(() => {
+        alert("삭제 완료!");
+        // ✅ 불필요한 axios.get 제거 → 바로 state 갱신
+        setRunLogs(prev => prev.filter(log => log.crew_log_id !== crew_log_id));
+      })
+      .catch(err => {
+        alert("크루장만 삭제 가능합니다");
+      });
   };
 
   return (
@@ -118,8 +136,17 @@ export default function CrewRunlog() {
       {/* 기록 리스트 */}
       <div style={styles.logList}>
         {runLogs.map((log, index) => (
-          <div key={index} style={styles.logItem}>
-            <h3>{log.title}</h3>
+          <div style={styles.logItem}>
+            <div style={styles.logHeader}>
+              <h3>{log.title}</h3>
+              <button
+                style={styles.deleteButton}
+                onClick={() => handleDeleteLog(log.crew_log_id)}
+              >
+                삭제
+              </button>
+            </div>
+
             <p><strong>날짜:</strong> {log.date}</p>
             <p><strong>작성자:</strong> {log.created_by}</p>
             <p><strong>거리:</strong> {log.distance_km} km</p>
@@ -148,6 +175,20 @@ const styles = {
     backgroundColor: '#007bff',
     color: 'white',
     fontSize: '1rem',
+    cursor: 'pointer'
+  },
+  logHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem'
+  },
+  deleteButton: {
+    padding: '0.3rem 0.8rem',
+    borderRadius: '8px',
+    backgroundColor: '#dc3545',
+    color: '#fff',
+    border: 'none',
     cursor: 'pointer'
   },
   writeButton: { padding: '0.7rem 1.5rem', borderRadius: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', fontSize: '1rem', cursor: 'pointer', marginBottom: '2rem' },

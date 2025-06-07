@@ -41,10 +41,15 @@ export default function Board() {
       .catch(err => console.error(err));
   };
 
-  const filteredPosts = posts.filter(
-    post => post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPosts = posts.filter(post => {
+    const title = (post.title ?? '').toLowerCase();
+    const content = (post.content ?? '').toLowerCase();
+    const author = (post.author_nickname ?? '').toLowerCase();
+
+    const keyword = searchTerm.toLowerCase();
+
+    return title.includes(keyword) || content.includes(keyword) || author.includes(keyword);
+  });
 
   return (
     <div style={styles.container}>
@@ -59,7 +64,7 @@ export default function Board() {
       </div>
 
       <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-        <input type="text" placeholder="제목 또는 내용 검색" value={searchTerm}
+        <input type="text" placeholder="제목 또는 작성자 검색" value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)} style={styles.searchInput} />
       </div>
 
@@ -85,15 +90,18 @@ export default function Board() {
       <div style={styles.postList}>
         {filteredPosts.map((post) => (
           <div key={post.post_id} style={styles.postItem}>
-            <div style={styles.postTitle} onClick={() => navigate(`/posts/${post.post_id}`)}>
-              {post.title}
+            <div style={styles.postTitleRow}>
+              <div style={styles.postTitle} onClick={() => navigate(`/posts/${post.post_id}`)}>
+                {post.title}
+              </div>
+              <div style={styles.likeCount}>❤️ {post.like_count}</div>
             </div>
+
             <div style={styles.postContent}>{post.content}</div>
             {post.image_url && <img src={post.image_url} alt="첨부이미지" style={styles.postImage} />}
             <div style={styles.metaInfo}>
               <span>작성자: {post.author_nickname || post.author_id}</span>
               <span>{post.created_at}</span>
-              <span>❤️ {post.like_count}</span>
             </div>
           </div>
         ))}
@@ -103,6 +111,42 @@ export default function Board() {
 }
 
 const styles = {
+  postTitleRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.5rem'
+  },
+  postTitle: {
+    fontWeight: '600',
+    fontSize: '1.1rem',
+    cursor: 'pointer'
+  },
+  likeCount: {
+    fontSize: '1rem',
+    color: '#ff5555',
+    fontWeight: 'bold'
+  },
+  postContent: {
+    color: '#555',
+    marginBottom: '0.5rem'
+  },
+  postImage: {
+    width: '100%',
+    borderRadius: '10px',
+    marginBottom: '0.5rem'
+  },
+  metaInfo: {
+    display: 'flex',
+    justifyContent: 'space-between',  // ✅ 핵심: 좌우 정렬
+    alignItems: 'center',
+    fontSize: '0.85rem',
+    color: '#777',
+    marginTop: '0.3rem'
+  },
+  date: {
+    color: '#999',
+  },
   container: { padding: '2rem', fontFamily: "'Segoe UI','Noto Sans KR',sans-serif", backgroundColor: '#f9f9f9', minHeight: '100vh' },
   title: { fontSize: '2rem', marginBottom: '1.5rem', color: '#333' },
   tabContainer: { display: 'flex', gap: '1rem', marginBottom: '2rem' },
@@ -118,9 +162,6 @@ const styles = {
   cancelButton: { padding: '0.7rem 1rem', borderRadius: '8px', backgroundColor: '#ccc', color: '#333', border: 'none', cursor: 'pointer' },
   postList: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
   postItem: { backgroundColor: '#fff', padding: '1rem', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
-  postTitle: { fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.5rem' },
-  postContent: { color: '#555', marginBottom: '0.5rem' },
-  postImage: { width: '100%', borderRadius: '10px', marginBottom: '0.5rem' },
   likeDeleteBox: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   likeButton: { backgroundColor: '#ff6b81', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer' },
   deleteButton: { backgroundColor: '#aaa', color: 'white', border: 'none', padding: '0.5rem 0.7rem', borderRadius: '20px', cursor: 'pointer' },

@@ -40,12 +40,12 @@ export default function CrewSchedule() {
         alert("공지사항 등록 완료!");
         // 새로고침 없이 즉시 목록 갱신
         setNotices([
-          { 
+          {
             notice_id: response.data.notice_id,
-            title: newNotice.title, 
+            title: newNotice.title,
             content: newNotice.content,
             created_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
-          }, 
+          },
           ...notices
         ]);
         setNewNotice({ title: '', content: '' });
@@ -53,7 +53,24 @@ export default function CrewSchedule() {
       })
       .catch(error => {
         console.error("공지사항 등록 실패:", error);
-        alert("등록 중 오류 발생");
+        alert("크루장만 작성 가능합니다");
+      });
+  };
+
+  const handleDeleteNotice = (notice_id) => {
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+
+    axios.delete(`http://172.21.81.147:5000/api/crews/${id}/notices/${notice_id}`, {
+      data: { user_id: 1 }  // ✅ user_id 포함시킴 (크루장만 삭제 가능)
+    })
+      .then(() => {
+        alert("삭제 완료!");
+        // 삭제 성공 시 notices를 갱신
+        setNotices(prev => prev.filter(notice => notice.notice_id !== notice_id));
+      })
+      .catch(err => {
+        console.error("삭제 실패:", err);
+        alert("크루장만 삭제 가능합니다");
       });
   };
 
@@ -75,7 +92,15 @@ export default function CrewSchedule() {
         ) : (
           notices.map((notice) => (
             <div key={notice.notice_id} style={styles.item}>
-              <strong>{notice.title}</strong>
+              <div style={styles.itemHeader}>
+                <strong>{notice.title}</strong>
+                <button
+                  style={styles.deleteButton}
+                  onClick={() => handleDeleteNotice(notice.notice_id)}
+                >
+                  삭제
+                </button>
+              </div>
               <p>{notice.content}</p>
               <small>{notice.created_at}</small>
             </div>
@@ -113,6 +138,20 @@ export default function CrewSchedule() {
 }
 
 const styles = {
+  itemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.5rem'
+  },
+  deleteButton: {
+    padding: '0.3rem 0.7rem',
+    borderRadius: '6px',
+    backgroundColor: '#dc3545',
+    color: '#fff',
+    border: 'none',
+    cursor: 'pointer'
+  },
   container: { padding: '2rem', fontFamily: "'Segoe UI','Noto Sans KR',sans-serif", backgroundColor: '#f9f9f9', minHeight: '100vh' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' },
   title: { fontSize: '2rem', color: '#333' },

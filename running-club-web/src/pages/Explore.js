@@ -11,7 +11,7 @@ export default function Explore() {
     description: '',
     region: ''
   });
-
+  const backend = 'http://172.21.81.147:5000';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function Explore() {
   }, []);
 
   const fetchCrews = () => {
-    axios.get('http://172.21.81.147:5000/api/crews_search')
+    axios.get(`${backend}/api/crews_search`)
       .then(response => {
         setCrews(response.data);
       })
