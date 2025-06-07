@@ -8,9 +8,10 @@ import Events from './pages/Events';
 import CrewList from './pages/CrewList';
 import Crew from './pages/Crew';
 import MyRunning from './pages/MyRunning';
-import CrewRunlog from './pages/CrewRunlog'; 
+import CrewRunlog from './pages/CrewRunlog';
 import CrewMembers from './pages/CrewMembers';
 import CrewSchedule from './pages/CrewSchedule';
+import PostDetail from './pages/PostDetail';
 
 function App() {
   return (
@@ -24,9 +25,11 @@ function App() {
         <Route path="/crewlist" element={<CrewList />} />
         <Route path="/crew/:id" element={<Crew />} />
         <Route path="/myrunning" element={<MyRunning />} />
-        <Route path="/crew/runlog" element={<CrewRunlog />} />
-        <Route path="/crew/members" element={<CrewMembers />} />
-        <Route path="/crew/schedule" element={<CrewSchedule />} />
+        <Route path="/crew/:id/runlog" element={<CrewRunlog />} />
+        <Route path="/crew/:id" element={<Crew />} />
+        <Route path="/crew/:id/members" element={<CrewMembers />} />
+        <Route path="/crew/:id/schedule" element={<CrewSchedule />} />
+        <Route path="/posts/:post_id" element={<PostDetail />} />
       </Routes>
     </Router>
   );

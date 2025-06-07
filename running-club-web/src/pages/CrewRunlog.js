@@ -1,36 +1,49 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 
 export default function CrewRunlog() {
-  const location = useLocation();
+  const { id } = useParams(); // id 가져오기
   const navigate = useNavigate();
-  const queryParams = new URLSearchParams(location.search);
-  const crewName = queryParams.get("name");
-  const decodedCrewName = decodeURIComponent(crewName);
 
   const [runLogs, setRunLogs] = useState([]);
   const [showForm, setShowForm] = useState(false);
-
+  const [crewName, setCrewName] = useState(""); // 크루 이름 받아오기 (옵션)
   const [newLog, setNewLog] = useState({
     date: '',
     title: '',
     distance_km: '',
     duration_min: '',
     notes: '',
-    photo_file: null,
-    photo_url: null
+    photo_url: ''  // 서버에는 url 전송이므로 file업로드는 제외
   });
+
+  // 크루 런로그 불러오기
+  useEffect(() => {
+    if (!id) return;
+
+    axios.get(`http://192.168.0.75:5000/api/crews/${id}/crew_run_log`)
+      .then(response => {
+        setRunLogs(response.data);
+      })
+      .catch(error => {
+        console.error("런 기록 불러오기 실패:", error);
+      });
+
+    // 크루 이름도 간단히 가져오자 (선택사항)
+    axios.get(`http://192.168.0.75:5000/api/crews/${id}`)
+      .then(response => {
+        setCrewName(response.data.name);
+      })
+      .catch(error => {
+        console.error("크루 정보 불러오기 실패:", error);
+      });
+
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewLog({ ...newLog, [name]: value });
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewLog({ ...newLog, photo_file: file, photo_url: URL.createObjectURL(file) });
-    }
   };
 
   const handleAddLog = () => {
@@ -38,33 +51,41 @@ export default function CrewRunlog() {
       alert('모든 항목을 입력하세요!');
       return;
     }
+
     const avg_pace = (newLog.duration_min / newLog.distance_km).toFixed(2);
-    setRunLogs([
-      ...runLogs,
-      {
-        date: newLog.date,
-        title: newLog.title,
-        distance_km: parseFloat(newLog.distance_km),
-        duration_min: parseInt(newLog.duration_min),
-        avg_pace: parseFloat(avg_pace),
-        photo_url: newLog.photo_url,
-        notes: newLog.notes,
-        created_by: "홍길동"
-      }
-    ]);
-    setNewLog({
-      date: '', title: '', distance_km: '', duration_min: '', notes: '', photo_file: null, photo_url: null
+
+    // POST 요청 (user_id는 예시로 1번 크루장이라고 가정)
+    axios.post(`http://192.168.0.75:5000/api/crews/${id}/crew_run_log`, {
+      user_id: 31,
+      title: newLog.title,
+      date: newLog.date,
+      distance_km: parseFloat(newLog.distance_km),
+      duration_min: parseInt(newLog.duration_min),
+      avg_pace: parseFloat(avg_pace),
+      notes: newLog.notes,
+      photo_url: newLog.photo_url  // 실제 프로젝트에서는 파일 업로드 구현 필요
+    }).then(res => {
+      alert('기록 등록 성공!');
+      setShowForm(false);
+      setNewLog({ date: '', title: '', distance_km: '', duration_min: '', notes: '', photo_url: '' });
+
+      // 다시 불러오기
+      return axios.get(`http://192.168.0.75:5000/api/crews/${id}/crew_run_log`);
+    }).catch(err => {
+      console.error("등록 실패:", err);
+      alert("크루장만 작성 가능합니다");
+    }).then(response => {
+      setRunLogs(response.data);
     });
-    setShowForm(false);
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>🏃‍♂️ {decodedCrewName} 크루 러닝 기록</h1>
+        <h1 style={styles.title}>🏃‍♂️ {crewName} 크루 러닝 기록</h1>
         <button
           style={styles.backButton}
-          onClick={() => navigate(`/crew?name=${encodeURIComponent(decodedCrewName)}`)}
+          onClick={() => navigate(-1)}
         >
           ← 뒤로가기
         </button>
@@ -77,25 +98,14 @@ export default function CrewRunlog() {
         <div style={styles.modal}>
           <div style={styles.form}>
             <h3>러닝 기록 작성</h3>
+            <input type="date" name="date" value={newLog.date} onChange={handleInputChange} style={styles.input} placeholder="날짜" />
+            <input type="text" name="title" value={newLog.title} onChange={handleInputChange} style={styles.input} placeholder="제목" />
+            <input type="number" name="distance_km" value={newLog.distance_km} onChange={handleInputChange} style={styles.input} placeholder="거리 (km)" />
+            <input type="number" name="duration_min" value={newLog.duration_min} onChange={handleInputChange} style={styles.input} placeholder="시간 (분)" />
+            <textarea name="notes" value={newLog.notes} onChange={handleInputChange} style={styles.textarea} placeholder="메모" />
 
-            <label>날짜</label>
-            <input type="date" name="date" value={newLog.date} onChange={handleInputChange} style={styles.input} />
-
-            <label>제목</label>
-            <input type="text" name="title" value={newLog.title} onChange={handleInputChange} style={styles.input} />
-
-            <label>거리 (km)</label>
-            <input type="number" name="distance_km" value={newLog.distance_km} onChange={handleInputChange} style={styles.input} />
-
-            <label>시간 (분)</label>
-            <input type="number" name="duration_min" value={newLog.duration_min} onChange={handleInputChange} style={styles.input} />
-
-            <label>메모</label>
-            <textarea name="notes" value={newLog.notes} onChange={handleInputChange} style={styles.textarea} />
-
-            <label>사진 첨부</label>
-            <input type="file" accept="image/*" onChange={handleFileChange} style={styles.fileInput} />
-            {newLog.photo_url && <img src={newLog.photo_url} alt="preview" style={styles.imagePreview} />}
+            {/* photo_url만 입력하도록 처리 */}
+            <input type="text" name="photo_url" value={newLog.photo_url} onChange={handleInputChange} style={styles.input} placeholder="이미지 URL (선택)" />
 
             <div style={styles.buttonRow}>
               <button onClick={handleAddLog} style={styles.submitButton}>작성 완료</button>

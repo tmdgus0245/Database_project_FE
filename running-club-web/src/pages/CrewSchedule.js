@@ -1,54 +1,67 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import axios from 'axios';
 
 export default function CrewSchedule() {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const crewName = queryParams.get("name");
-  const navigate = useNavigate(); 
-  const decodedCrewName = decodeURIComponent(crewName || "크루");
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState({});
   const [notices, setNotices] = useState([]);
   const [showEventForm, setShowEventForm] = useState(false);
-  const [showNoticeForm, setShowNoticeForm] = useState(false);
+  const [newNotice, setNewNotice] = useState({ title: '', content: '' });
 
-  const [newEvent, setNewEvent] = useState({ title: '', description: '' });
-  const [newNotice, setNewNotice] = useState('');
-
-  const handleAddEvent = () => {
-    if (!newEvent.title.trim()) return;
-    const dateKey = selectedDate.toDateString();
-    const updatedEvents = {
-      ...events,
-      [dateKey]: [...(events[dateKey] || []), { ...newEvent }]
-    };
-    setEvents(updatedEvents);
-    setNewEvent({ title: '', description: '' });
-    setShowEventForm(false);
-  };
+  useEffect(() => {
+    // 공지사항 불러오기
+    axios.get(`http://192.168.0.75:5000/api/crews/${id}/crew_notice`)
+      .then(response => {
+        setNotices(response.data);
+      })
+      .catch(error => {
+        console.error("공지사항 불러오기 실패:", error);
+      });
+  }, [id]);
 
   const handleAddNotice = () => {
-    if (!newNotice.trim()) return;
-    setNotices([...notices, newNotice]);
-    setNewNotice('');
-    setShowNoticeForm(false);
+    if (!newNotice.title.trim() || !newNotice.content.trim()) {
+      alert('제목과 내용을 모두 입력하세요!');
+      return;
+    }
+
+    // 공지사항 POST 요청
+    axios.post(`http://192.168.0.75:5000/api/crews/${id}/crew_notice`, {
+      user_id: 31,  // 💡 현재 로그인 사용자 (임시로 1로 작성)
+      title: newNotice.title,
+      content: newNotice.content
+    })
+      .then(response => {
+        alert("공지사항 등록 완료!");
+        // 새로고침 없이 즉시 목록 갱신
+        setNotices([
+          { 
+            notice_id: response.data.notice_id,
+            title: newNotice.title, 
+            content: newNotice.content,
+            created_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+          }, 
+          ...notices
+        ]);
+        setNewNotice({ title: '', content: '' });
+        setShowEventForm(false);
+      })
+      .catch(error => {
+        console.error("공지사항 등록 실패:", error);
+        alert("등록 중 오류 발생");
+      });
   };
 
   return (
     <div style={styles.container}>
-
       <div style={styles.header}>
-        <h1 style={styles.title}>📅 {decodedCrewName} 크루 일정 및 공지사항</h1>
-        <button
-          style={styles.backButton}
-          onClick={() => navigate(`/crew?name=${encodeURIComponent(decodedCrewName)}`)}
-        >
-          ← 뒤로가기
-        </button>
+        <h1 style={styles.title}>📅 크루 공지사항</h1>
+        <button style={styles.backButton} onClick={() => navigate(`/crew/${id}`)}>← 뒤로가기</button>
       </div>
 
       <div style={styles.calendarSection}>
@@ -56,70 +69,41 @@ export default function CrewSchedule() {
       </div>
 
       <div style={styles.section}>
-        <h3>📌 선택 날짜 일정 ({selectedDate.toDateString()})</h3>
-        {(events[selectedDate.toDateString()] || []).length === 0 ? (
-          <p>등록된 일정이 없습니다.</p>
+        <h3>📌 전체 공지사항</h3>
+        {notices.length === 0 ? (
+          <p>등록된 공지사항이 없습니다.</p>
         ) : (
-          events[selectedDate.toDateString()].map((event, idx) => (
-            <div key={idx} style={styles.item}>
-              <strong>{event.title}</strong>
-              <p>{event.description}</p>
+          notices.map((notice) => (
+            <div key={notice.notice_id} style={styles.item}>
+              <strong>{notice.title}</strong>
+              <p>{notice.content}</p>
+              <small>{notice.created_at}</small>
             </div>
           ))
         )}
-        <button onClick={() => setShowEventForm(true)} style={styles.addButton}>+ 일정 추가</button>
+        <button onClick={() => setShowEventForm(true)} style={styles.addButton}>+ 공지사항 작성</button>
       </div>
 
       {showEventForm && (
         <div style={styles.modal}>
           <div style={styles.form}>
-            <h3>일정 추가</h3>
+            <h3>공지사항 작성</h3>
             <input
               type="text"
               placeholder="제목"
-              value={newEvent.title}
-              onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              value={newNotice.title}
+              onChange={(e) => setNewNotice({ ...newNotice, title: e.target.value })}
               style={styles.input}
             />
             <textarea
-              placeholder="설명"
-              value={newEvent.description}
-              onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-              style={styles.textarea}
-            />
-            <div style={styles.buttonRow}>
-              <button onClick={handleAddEvent} style={styles.submitButton}>작성 완료</button>
-              <button onClick={() => setShowEventForm(false)} style={styles.cancelButton}>취소</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div style={styles.section}>
-        <h3>📢 공지사항</h3>
-        {notices.length === 0 ? (
-          <p>등록된 공지사항이 없습니다.</p>
-        ) : (
-          notices.map((notice, idx) => (
-            <div key={idx} style={styles.item}>{notice}</div>
-          ))
-        )}
-        <button onClick={() => setShowNoticeForm(true)} style={styles.addButton}>+ 공지 추가</button>
-      </div>
-
-      {showNoticeForm && (
-        <div style={styles.modal}>
-          <div style={styles.form}>
-            <h3>공지사항 작성</h3>
-            <textarea
-              placeholder="공지사항 입력"
-              value={newNotice}
-              onChange={(e) => setNewNotice(e.target.value)}
+              placeholder="내용"
+              value={newNotice.content}
+              onChange={(e) => setNewNotice({ ...newNotice, content: e.target.value })}
               style={styles.textarea}
             />
             <div style={styles.buttonRow}>
               <button onClick={handleAddNotice} style={styles.submitButton}>작성 완료</button>
-              <button onClick={() => setShowNoticeForm(false)} style={styles.cancelButton}>취소</button>
+              <button onClick={() => setShowEventForm(false)} style={styles.cancelButton}>취소</button>
             </div>
           </div>
         </div>
@@ -131,20 +115,11 @@ export default function CrewSchedule() {
 const styles = {
   container: { padding: '2rem', fontFamily: "'Segoe UI','Noto Sans KR',sans-serif", backgroundColor: '#f9f9f9', minHeight: '100vh' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' },
-
   title: { fontSize: '2rem', color: '#333' },
-
-  // ✅ 뒤로가기 버튼 스타일 추가
   backButton: {
-    padding: '0.5rem 1rem',
-    borderRadius: '8px',
-    border: 'none',
-    backgroundColor: '#007bff',
-    color: 'white',
-    fontSize: '1rem',
-    cursor: 'pointer'
+    padding: '0.5rem 1rem', borderRadius: '8px', border: 'none',
+    backgroundColor: '#007bff', color: 'white', fontSize: '1rem', cursor: 'pointer'
   },
-
   calendarSection: { marginBottom: '2rem', display: 'flex', justifyContent: 'center' },
   section: { backgroundColor: '#fff', padding: '1rem', borderRadius: '10px', marginBottom: '2rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
   item: { backgroundColor: '#f1f1f1', padding: '0.7rem', borderRadius: '8px', marginBottom: '0.5rem' },

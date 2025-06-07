@@ -5,7 +5,7 @@ import axios from 'axios';
 export default function Crew() {
     const { id } = useParams();
     const navigate = useNavigate();
-
+    const userId = 1;  //  현재 로그인한 유저 (임시로 user_id 1)
     const [crewInfo, setCrewInfo] = useState({
         name: '',
         leader: '',
@@ -14,9 +14,9 @@ export default function Crew() {
     });
 
     const [reviews, setReviews] = useState([]);
-
     const [newReview, setNewReview] = useState("");
     const [newRating, setNewRating] = useState(5);
+    const [isMember, setIsMember] = useState(false);
 
     const averageRating = reviews.length > 0
         ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length)
@@ -48,31 +48,122 @@ export default function Crew() {
         );
     };
 
+    const StarRatingInput = ({ rating, setRating }) => {
+        const [hover, setHover] = useState(0);
+
+        return (
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                        key={star}
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill={(hover ? (hover >= star) : (rating >= star)) ? "#ffc107" : "#ddd"}
+                        onMouseEnter={() => setHover(star)}
+                        onMouseLeave={() => setHover(0)}
+                        onClick={() => setRating(star)}
+                        style={{ cursor: 'pointer', transition: 'fill 0.2s' }}
+                    >
+                        <path d="M12 .587l3.668 7.568L24 9.75l-6 5.849 1.42 8.287L12 18.896l-7.42 4.99L6 15.599 0 9.75l8.332-1.595z" />
+                    </svg>
+                ))}
+            </div>
+        );
+    };
+
     useEffect(() => {
-        axios.get(`http://172.21.81.205:5000/api/crews/${id}`)
+        axios.get(`http://192.168.0.75:5000/api/crews/${id}`)
             .then(response => {
                 setCrewInfo(response.data);
-                setReviews(response.data.reviews);
             })
             .catch(error => {
                 console.error("Error fetching crew info:", error);
             });
+
+        axios.get(`http://192.168.0.75:5000/api/crews/${id}/reviews`)
+            .then(response => {
+                setReviews(response.data);
+            })
+            .catch(error => {
+                console.error("Error fetching reviews:", error);
+            });
     }, [id]);
 
+
     const handleReviewSubmit = () => {
-        if (newReview.trim() !== "") {
-            setReviews([...reviews, {
-                review_id: Date.now(),
-                user_id: 1,
-                rating: newRating,
-                comment: newReview,
-                created_at: new Date().toISOString()
-            }]);
-            setNewReview("");
-            setNewRating(5);
+        if (newReview.trim() === "") {
+            alert("리뷰를 작성해주세요!");
+            return;
         }
+
+        const payload = {
+            user_id: userId,
+            rating: newRating,
+            comment: newReview
+        };
+
+        axios.post(`http://192.168.0.75:5000/api/crews/${id}/reviews`, payload)
+            .then(res => {
+                alert("리뷰 등록 완료");
+                setNewReview("");
+                setNewRating(5);
+                // 등록 후 리뷰 다시 불러오기
+                return axios.get(`http://192.168.0.75:5000/api/crews/${id}/reviews`);
+            })
+            .then(res => setReviews(res.data))
+            .catch(err => {
+                console.error("리뷰 등록 실패:", err);
+                alert("리뷰 등록 중 오류 발생");
+            });
     };
 
+    // 리뷰 삭제 핸들러 (본인 리뷰만 삭제 가능)
+    const handleDeleteReview = (review_id) => {
+        axios.delete(`http://192.168.0.75:5000/api/reviews/${review_id}`, {
+            data: { user_id: userId }
+        })
+            .then(res => {
+                alert("리뷰 삭제 완료");
+                setReviews(reviews.filter(review => review.review_id !== review_id));
+            })
+            .catch(err => {
+                console.error("리뷰 삭제 실패:", err);
+                alert("리뷰 삭제 중 오류 발생");
+            });
+    };
+
+    const handleJoin = () => {
+        axios.post(`http://192.168.0.75:5000/api/crews/${id}/join`, { user_id: userId })
+            .then(res => {
+                alert("가입 완료!");
+                setIsMember(true);
+            })
+            .catch(err => {
+                console.error(err);
+                alert("가입 중 오류 발생");
+            });
+    };
+
+    const handleLeave = () => {
+        axios.post(`http://192.168.0.75:5000/api/crews/${id}/leave`, { user_id: userId })
+            .then(res => {
+                alert("탈퇴 완료!");
+                setIsMember(false);
+            })
+            .catch(err => {
+                console.error(err);
+                alert("탈퇴 중 오류 발생");
+            });
+    };
+
+    const renderJoinLeaveButton = () => {
+        return isMember ? (
+            <button style={styles.leaveButton} onClick={handleLeave}>탈퇴</button>
+        ) : (
+            <button style={styles.joinButton} onClick={handleJoin}>가입</button>
+        );
+    };
 
     const handleMenuClick = (menu) => {
         navigate(`/crew/${id}/${menu}`);
@@ -87,7 +178,7 @@ export default function Crew() {
                         <div style={styles.dropdownMenu}>
                             <button style={styles.menuItem} onClick={() => handleMenuClick('members')}>👥 크루원</button>
                             <button style={styles.menuItem} onClick={() => handleMenuClick('runlog')}>🏃‍♂️ 크루 러닝 기록</button>
-                            <button style={styles.menuItem} onClick={() => handleMenuClick('schedule')}>📅 크루 일정 및 공지사항</button>
+                            <button style={styles.menuItem} onClick={() => handleMenuClick('schedule')}>📅 크루 일정</button>
                         </div>
                     )}
                 </div>
@@ -98,7 +189,7 @@ export default function Crew() {
                     <p style={styles.region}>{crewInfo.region}</p>
                 </div>
 
-                <button style={styles.joinButton}>가입</button>
+                {renderJoinLeaveButton()}
             </div>
 
             <div style={styles.ratingBox}>
@@ -117,16 +208,7 @@ export default function Crew() {
             <div style={styles.reviewSection}>
                 <h3>리뷰</h3>
                 <div style={styles.reviewInputBox}>
-                    <select
-                        value={newRating}
-                        onChange={(e) => setNewRating(Number(e.target.value))}
-                        style={styles.ratingSelect}
-                    >
-                        {[5, 4, 3, 2, 1].map((score) => (
-                            <option key={score} value={score}>{score}점</option>
-                        ))}
-                    </select>
-
+                    <StarRatingInput rating={newRating} setRating={setNewRating} />
                     <input
                         type="text"
                         placeholder="리뷰 작성..."
@@ -140,7 +222,16 @@ export default function Crew() {
                 <div style={styles.reviewList}>
                     {reviews.map((review) => (
                         <div key={review.review_id} style={styles.reviewItem}>
-                            <strong>{review.rating}점</strong> - {review.comment} ({review.created_at})
+                            <div style={styles.reviewContent}>
+                                <div>
+                                    <strong>{review.rating}점</strong> - {review.comment} ({review.nickname} / {review.created_at})
+                                </div>
+                                {review.user_id === userId && (
+                                    <button onClick={() => handleDeleteReview(review.review_id)} style={styles.deleteButton}>
+                                        🗑️
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -237,6 +328,14 @@ const styles = {
         color: 'white',
         cursor: 'pointer',
     },
+    leaveButton: {
+        padding: '0.5rem 1rem',
+        borderRadius: '8px',
+        border: 'none',
+        backgroundColor: '#dc3545',
+        color: 'white',
+        cursor: 'pointer',
+    },
     description: {
         marginBottom: '2rem',
     },
@@ -271,5 +370,19 @@ const styles = {
         padding: '0.7rem 1rem',
         borderRadius: '8px',
         backgroundColor: '#f0f0f0',
+    },
+
+    reviewContent: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+
+    deleteButton: {
+        backgroundColor: 'transparent',
+        border: 'none',
+        fontSize: '1.3rem',
+        color: '#dc3545',
+        cursor: 'pointer'
     },
 };
