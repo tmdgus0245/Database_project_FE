@@ -5,7 +5,7 @@ import axios from 'axios';
 export default function PostDetail() {
     const { post_id } = useParams();
     const navigate = useNavigate();
-    const backend = 'http://192.168.0.75:5000';
+    const backend = 'http://172.21.81.147:5000';
     const userId = 1;  // 로그인 유저 가정
 
     const [post, setPost] = useState(null);
@@ -49,7 +49,7 @@ export default function PostDetail() {
     const handleDelete = () => {
         if (!window.confirm("정말 삭제하시겠습니까?")) return;
 
-        axios.delete(`${backend}/api/posts/course/${post_id}`, { data: { user_id: userId } })
+        axios.delete(`${backend}/api/posts/${post_id}`, { data: { user_id: userId } })
             .then(() => {
                 alert("삭제 완료");
                 navigate('/board');

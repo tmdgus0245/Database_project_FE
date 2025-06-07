@@ -10,7 +10,8 @@ export default function Crew() {
         name: '',
         leader: '',
         region: '',
-        description: ''
+        description: '',
+        created_by: null
     });
 
     const [reviews, setReviews] = useState([]);
@@ -73,7 +74,7 @@ export default function Crew() {
     };
 
     useEffect(() => {
-        axios.get(`http://192.168.0.75:5000/api/crews/${id}`)
+        axios.get(`http://172.21.81.147:5000/api/crews/${id}`)
             .then(response => {
                 setCrewInfo(response.data);
             })
@@ -81,12 +82,21 @@ export default function Crew() {
                 console.error("Error fetching crew info:", error);
             });
 
-        axios.get(`http://192.168.0.75:5000/api/crews/${id}/reviews`)
+        axios.get(`http://172.21.81.147:5000/api/crews/${id}/reviews`)
             .then(response => {
                 setReviews(response.data);
             })
             .catch(error => {
                 console.error("Error fetching reviews:", error);
+            });
+
+        axios.get(`http://172.21.81.147:5000/api/users/${userId}`)
+            .then(response => {
+                const joinedCrews = response.data.joined_crew;
+                setIsMember(joinedCrews.some(crew => crew.crew_id === parseInt(id)));
+            })
+            .catch(error => {
+                console.error("Error fetching user data:", error);
             });
     }, [id]);
 
@@ -103,13 +113,13 @@ export default function Crew() {
             comment: newReview
         };
 
-        axios.post(`http://192.168.0.75:5000/api/crews/${id}/reviews`, payload)
+        axios.post(`http://172.21.81.147:5000/api/crews/${id}/reviews`, payload)
             .then(res => {
                 alert("리뷰 등록 완료");
                 setNewReview("");
                 setNewRating(5);
                 // 등록 후 리뷰 다시 불러오기
-                return axios.get(`http://192.168.0.75:5000/api/crews/${id}/reviews`);
+                return axios.get(`http://172.21.81.147:5000/api/crews/${id}/reviews`);
             })
             .then(res => setReviews(res.data))
             .catch(err => {
@@ -120,7 +130,7 @@ export default function Crew() {
 
     // 리뷰 삭제 핸들러 (본인 리뷰만 삭제 가능)
     const handleDeleteReview = (review_id) => {
-        axios.delete(`http://192.168.0.75:5000/api/reviews/${review_id}`, {
+        axios.delete(`http://172.21.81.147:5000/api/reviews/${review_id}`, {
             data: { user_id: userId }
         })
             .then(res => {
@@ -134,7 +144,7 @@ export default function Crew() {
     };
 
     const handleJoin = () => {
-        axios.post(`http://192.168.0.75:5000/api/crews/${id}/join`, { user_id: userId })
+        axios.post(`http://172.21.81.147:5000/api/crews/${id}/join`, { user_id: userId })
             .then(res => {
                 alert("가입 완료!");
                 setIsMember(true);
@@ -146,7 +156,7 @@ export default function Crew() {
     };
 
     const handleLeave = () => {
-        axios.post(`http://192.168.0.75:5000/api/crews/${id}/leave`, { user_id: userId })
+        axios.post(`http://172.21.81.147:5000/api/crews/${id}/leave`, { user_id: userId })
             .then(res => {
                 alert("탈퇴 완료!");
                 setIsMember(false);
@@ -158,11 +168,32 @@ export default function Crew() {
     };
 
     const renderJoinLeaveButton = () => {
+        if (userId === crewInfo.created_by) {
+            return (
+                <button style={styles.leaveButton} onClick={handleDeleteCrew}>삭제</button>
+            );
+        }
         return isMember ? (
             <button style={styles.leaveButton} onClick={handleLeave}>탈퇴</button>
         ) : (
             <button style={styles.joinButton} onClick={handleJoin}>가입</button>
         );
+    };
+
+    const handleDeleteCrew = () => {
+        if (!window.confirm("정말 이 크루를 삭제하시겠습니까?")) return;
+
+        axios.delete(`http://172.21.81.147:5000/api/crews/${id}`, {
+            data: { user_id: userId }
+        })
+            .then(res => {
+                alert("크루 삭제 완료!");
+                navigate("/");  // 삭제 후 홈으로 이동 (혹은 다른 경로)
+            })
+            .catch(err => {
+                console.error("크루 삭제 실패:", err);
+                alert("크루 삭제 중 오류 발생");
+            });
     };
 
     const handleMenuClick = (menu) => {

@@ -9,7 +9,7 @@ export default function Board() {
   const [newPost, setNewPost] = useState({ title: '', content: '', image_url: '' });
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const backend = 'http://192.168.0.75:5000';
+  const backend = 'http://172.21.81.147:5000';
   const userId = 1;
 
   const fetchPosts = (category) => {
@@ -34,7 +34,7 @@ export default function Board() {
       image_url: newPost.image_url
     })
       .then(() => {
-        fetchPosts();
+        fetchPosts(category);
         setNewPost({ title: '', content: '', image_url: '' });
         setShowForm(false);
       })

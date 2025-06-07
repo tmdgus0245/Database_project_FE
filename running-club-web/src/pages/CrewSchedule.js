@@ -31,8 +31,8 @@ export default function CrewSchedule() {
     }
 
     // 공지사항 POST 요청
-    axios.post(`http://192.168.0.75:5000/api/crews/${id}/crew_notice`, {
-      user_id: 31,  // 💡 현재 로그인 사용자 (임시로 1로 작성)
+    axios.post(`http://172.21.81.147:5000/api/crews/${id}/crew_notice`, {
+      user_id: 1,  // 💡 현재 로그인 사용자 (임시로 1로 작성)
       title: newNotice.title,
       content: newNotice.content
     })

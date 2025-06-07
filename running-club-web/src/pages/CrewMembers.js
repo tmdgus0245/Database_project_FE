@@ -13,7 +13,7 @@ export default function CrewMembers() {
     if (!id) return;
 
     // 1. 크루 기본 정보도 가져와서 이름 표시
-    axios.get(`http://192.168.0.75:5000/api/crews/${id}`)
+    axios.get(`http://172.21.81.147:5000/api/crews/${id}`)
       .then(response => {
         setCrewName(response.data.name);
       })
@@ -22,7 +22,7 @@ export default function CrewMembers() {
       });
 
     // 2. 멤버 리스트 가져오기
-    axios.get(`http://192.168.0.75:5000/api/crews/${id}/crew_member`)
+    axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_member`)
       .then(response => {
         setMembers(response.data);
       })

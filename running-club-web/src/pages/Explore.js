@@ -19,7 +19,7 @@ export default function Explore() {
   }, []);
 
   const fetchCrews = () => {
-    axios.get('http://192.168.0.75:5000/api/crews_search')
+    axios.get('http://172.21.81.147:5000/api/crews_search')
       .then(response => {
         setCrews(response.data);
       })
@@ -43,7 +43,7 @@ export default function Explore() {
       return;
     }
 
-    axios.post('http://192.168.0.75:5000/api/crews_make', {
+    axios.post('http://172.21.81.147:5000/api/crews_make', {
       name: newCrew.name,
       description: newCrew.description,
       region: newCrew.region,

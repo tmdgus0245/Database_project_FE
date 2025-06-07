@@ -22,7 +22,7 @@ export default function CrewRunlog() {
   useEffect(() => {
     if (!id) return;
 
-    axios.get(`http://192.168.0.75:5000/api/crews/${id}/crew_run_log`)
+    axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log`)
       .then(response => {
         setRunLogs(response.data);
       })
@@ -31,7 +31,7 @@ export default function CrewRunlog() {
       });
 
     // 크루 이름도 간단히 가져오자 (선택사항)
-    axios.get(`http://192.168.0.75:5000/api/crews/${id}`)
+    axios.get(`http://172.21.81.147:5000/api/crews/${id}`)
       .then(response => {
         setCrewName(response.data.name);
       })
@@ -55,8 +55,8 @@ export default function CrewRunlog() {
     const avg_pace = (newLog.duration_min / newLog.distance_km).toFixed(2);
 
     // POST 요청 (user_id는 예시로 1번 크루장이라고 가정)
-    axios.post(`http://192.168.0.75:5000/api/crews/${id}/crew_run_log`, {
-      user_id: 31,
+    axios.post(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log`, {
+      user_id: 1,
       title: newLog.title,
       date: newLog.date,
       distance_km: parseFloat(newLog.distance_km),
@@ -70,7 +70,7 @@ export default function CrewRunlog() {
       setNewLog({ date: '', title: '', distance_km: '', duration_min: '', notes: '', photo_url: '' });
 
       // 다시 불러오기
-      return axios.get(`http://192.168.0.75:5000/api/crews/${id}/crew_run_log`);
+      return axios.get(`http://172.21.81.147:5000/api/crews/${id}/crew_run_log`);
     }).catch(err => {
       console.error("등록 실패:", err);
       alert("크루장만 작성 가능합니다");
